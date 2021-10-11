@@ -1,10 +1,12 @@
 package com.learn.bank;
 
-import java.util.Map;
-import java.util.Scanner;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class UserOperation {
 
@@ -39,13 +41,13 @@ public class UserOperation {
     public void addUser(Map<Integer, User> userMap) {
         Scanner sc = new Scanner(System.in);
         System.out.println("Name:");
-        String name = sc.next();//name input
+        String name = sc.next().toUpperCase(Locale.ROOT);//name input
         System.out.println("Mobile No:");
         String mobileNo = sc.next();//mobile input
         if (!checkMobileNo(userMap, mobileNo)) {
             int number = 1;
             while (number > 0) {
-                System.out.println("Mobile number is Invalid , Enter again");
+                System.out.println("Mobile number is Invalid or Already Registered, Enter again :");
                 mobileNo = sc.next();
                 if (checkMobileNo(userMap, mobileNo)) {
                     number = 0;
@@ -114,6 +116,26 @@ public class UserOperation {
         return null;
     }
 
+    //Sorted By Name
+    public List<Map.Entry<Integer, User>> getUserSortedByName(Map<Integer, User> userMap) {
+        List<Map.Entry<Integer, User>> entryList = new ArrayList<>(userMap.entrySet());
+        entryList.sort((Comparator.comparing(o -> o.getValue().getName())));
+        return entryList;
+    }
+
+    public static <T> Predicate<T> distinctByKey(Function<? super T, ?> valueExtractor) {
+        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
+        return t -> seen.putIfAbsent(valueExtractor.apply(t), Boolean.TRUE) == null;
+    }
+
+    // By Distinct Name
+    public List<Map.Entry<Integer, User>> getUserDistinctName(Map<Integer, User> userMap) {
+        List<Map.Entry<Integer, User>> list = getUserSortedByName(userMap);
+        return list.stream()
+                .filter(distinctByKey(p -> p.getValue().getName()))
+                .collect(Collectors.toList());
+    }
+
 
     //operations for methods
     public void operation(Map<Integer, User> userMap, int operationNo) {
@@ -121,56 +143,70 @@ public class UserOperation {
             Scanner sc = new Scanner(System.in);
             switch (operationNo) {
                 case 1://create new user
+                    System.out.println("-----New User----");
                     addUser(userMap);
+                    System.out.println("-----------------------");
                     break;
 
                 case 2://check balance
+                    System.out.println("----Check Balance----");
                     System.out.println("Enter Account Number:");
                     int accountNo = sc.nextInt();
                     if (userMap.containsKey(accountNo)) {
                         checkBalance(userMap, accountNo);
+                        System.out.println("------------------");
                     } else {
                         System.out.println("Account Not Found");
+                        System.out.println("--------------");
                     }
                     break;
 
                 case 3://deposit
+                    System.out.println("----Deposit----");
                     System.out.println("Enter Account Number:");
                     int accountNo1 = sc.nextInt();
                     if (userMap.containsKey(accountNo1)) {
                         System.out.println("Enter Deposit Amount");
                         double deposit = sc.nextDouble();
                         deposit(userMap, accountNo1, deposit);
+                        System.out.println("--------------");
                     } else {
                         System.out.println("Account Not Found");
+                        System.out.println("-----------------");
                     }
                     break;
 
                 case 4://withdraw
+                    System.out.println("----Withdraw----");
                     System.out.println("Enter Account Number:");
                     int accountNo2 = sc.nextInt();
                     if (userMap.containsKey(accountNo2)) {
                         System.out.println("Enter withdraw Amount");
                         double withdraw = sc.nextDouble();
                         withdraw(userMap, accountNo2, withdraw);
+                        System.out.println("---------------------");
                     } else {
                         System.out.println("Account Not Found");
+                        System.out.println("--------------");
                     }
                     break;
 
                 case 5://getListByAccountNo
                     Map<Integer, User> sortedMap = new TreeMap<>(userMap);
                     if (sortedMap.size() > 0) {
+                        System.out.println("-----List By Account Number------");
                         for (User user : sortedMap.values()) {
                             System.out.println("Account No : " + user.getAccountNo() + "     Name : " + user.getName());
-                            System.out.println("-------------------------------------");
                         }
+                        System.out.println("-------------------------------------");
                     } else {
                         System.out.println("No record");
+                        System.out.println("--------------");
                     }
                     break;
 
-                case 6://getListByAccountNo
+                case 6://getUserByMobileNo
+                    System.out.println("------User By Mobile-----");
                     System.out.println("Enter Your Mobile Number");
                     String mobileNo = sc.next();
                     User mobileUser = getUserByMobileNo(userMap, mobileNo);
@@ -183,17 +219,48 @@ public class UserOperation {
                         System.out.println("------------------------------");
                     } else {
                         System.out.println("Didn't find any record with your mobile number");
+                        System.out.println("---------------------------------------------");
+                    }
+                    break;
+
+                case 7://getUserSortedByName
+                    List<Map.Entry<Integer, User>> entryList = getUserSortedByName(userMap);
+                    if (entryList.size() > 0) {
+                        System.out.println("----Users Sorted By Name-------");
+                        for (Map.Entry<Integer, User> entry : entryList) {
+                            System.out.println(entry.getValue().getName());
+                        }
+                        System.out.println("-------------------------------");
+                    } else {
+                        System.out.println("No Record Found");
+                        System.out.println("--------------");
+                    }
+                    break;
+
+                case 8:// getUserByDistinctName
+                    List<Map.Entry<Integer, User>> userMap1 = getUserDistinctName(userMap);
+                    if (userMap1.size() > 0) {
+                        System.out.println("-----By Distinct Name----");
+                        for (Map.Entry<Integer, User> map : userMap1) {
+                            System.out.println(map.getValue().getName());
+                        }
+                        System.out.println("--------------------------------");
+                    } else {
+                        System.out.println("No Record Found");
+                        System.out.println("--------------");
                     }
                     break;
 
                 default://invalid
                     System.out.println("INVALID INPUT");
+                    System.out.println("--------------");
                     break;
 
             }
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Invalid Account number");
+            System.out.println("----------------------");
         }
     }
 }
